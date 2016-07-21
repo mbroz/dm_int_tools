@@ -51,7 +51,7 @@ struct superblock {
 	uint16_t integrity_tag_size;
 	uint32_t journal_sections;
 	uint64_t provided_data_sectors;
-};
+} __attribute__ ((packed));
 
 static enum { CMD_DUMP, CMD_CHECK, CMD_FIX, CMD_FORMAT } command;
 typedef enum { DEV_CHECK, DEV_FIX, DEV_FORMAT } dev_command;
