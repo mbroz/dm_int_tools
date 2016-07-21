@@ -1,1 +1,1 @@
-# dm_int_tools
+# Simple tool for checking dm-integrity devices.
