@@ -1,1 +1,3 @@
-# Simple tool for checking dm-integrity devices.
+# integrity_check
+
+Simple tool for checking dm-integrity devices.
