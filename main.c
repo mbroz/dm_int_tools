@@ -349,7 +349,7 @@ int main (int argc, char *argv[])
 		{ NULL, 0, 0, 0 },
 	};
 
-	while((c = getopt_long(argc, argv, "b:rdh", longopts, NULL)) != -1) {
+	while((c = getopt_long(argc, argv, "b:rdhn", longopts, NULL)) != -1) {
 		switch(c) {
 		case 'b':
 			tmpll = atoll(optarg);
