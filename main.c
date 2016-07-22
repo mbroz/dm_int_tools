@@ -36,7 +36,6 @@
 #include <getopt.h>
 
 #define SECTOR_SIZE 512
-#define SIZE_SECTORS 8192 /* 16MB */
 
 #define log_dbg(x...) if (_debug) printf(x);
 
@@ -57,6 +56,8 @@ static enum { CMD_DUMP, CMD_CHECK, CMD_FIX, CMD_FORMAT } command;
 typedef enum { DEV_CHECK, DEV_FIX, DEV_FORMAT } dev_command;
 
 static int _debug = 0, _randomize = 0;
+
+static unsigned int block_sectors = 8192; /* 16 MB */
 
 static void *aligned_malloc(void **base, int size)
 {
@@ -217,7 +218,7 @@ static int rw_sectors(const char *device, uint64_t offset_sec,
 	char *sf;
 	int devfd, flags;
 
-	sf = aligned_malloc(&x, SIZE_SECTORS * SECTOR_SIZE);
+	sf = aligned_malloc(&x, block_sectors * SECTOR_SIZE);
 	if (!sf)
 		return EXIT_FAILURE;
 
@@ -233,10 +234,10 @@ static int rw_sectors(const char *device, uint64_t offset_sec,
 	}
 
 	while (offset_sec < dev_size_sec) {
-		if ((offset_sec + SIZE_SECTORS) > dev_size_sec)
+		if ((offset_sec + block_sectors) > dev_size_sec)
 			block_size_sec = dev_size_sec - offset_sec;
 		else
-			block_size_sec = SIZE_SECTORS;
+			block_size_sec = block_sectors;
 
 		if (lseek64(devfd, offset_sec * SECTOR_SIZE, SEEK_SET) < 0) {
 			printf("Seek error, sector %" PRIu64 " (Errno %d).\n", offset_sec, errno);
@@ -325,7 +326,7 @@ static int cmd_dev(const char *device, dev_command dc)
 
 static void __attribute__((__noreturn__)) help(void)
 {
-	printf("Use: [--debug] [--randomize] dump|check|fix|format <device>.\n"
+	printf("Use: [--debug] [--randomize] [--blocksize <sectors>] dump|check|fix|format <device>.\n"
 		"\nCommands:\n"
 		"  dump   - dump dm-integrity superblock\n"
 		"  check  - use direct-io to check device access\n"
@@ -338,15 +339,23 @@ static void __attribute__((__noreturn__)) help(void)
 int main (int argc, char *argv[])
 {
 	int c;
+	long long tmpll;
 	static const struct option longopts[] = {
-		{ "randomize",  0, 0, 'r' },
-		{ "debug",      0, 0, 'd' },
-		{ "help",       0, 0, 'h' },
+		{ "blocksize",  required_argument, 0, 'b' },
+		{ "randomize",  no_argument,       0, 'r' },
+		{ "debug",      no_argument,       0, 'd' },
+		{ "help",       no_argument,       0, 'h' },
 		{ NULL, 0, 0, 0 },
 	};
 
-	while((c = getopt_long(argc, argv, "rdh", longopts, NULL)) != -1) {
+	while((c = getopt_long(argc, argv, "b:rdh", longopts, NULL)) != -1) {
 		switch(c) {
+		case 'b':
+			tmpll = atoll(optarg);
+			block_sectors = (uint64_t)tmpll;
+			if (tmpll <= 0 || tmpll != (long long)block_sectors)
+				help();
+			break;
 		case 'd':
 			_debug = 1;
 			break;
