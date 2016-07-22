@@ -55,7 +55,7 @@ struct superblock {
 static enum { CMD_DUMP, CMD_CHECK, CMD_FIX, CMD_FORMAT } command;
 typedef enum { DEV_CHECK, DEV_FIX, DEV_FORMAT } dev_command;
 
-static int _debug = 0, _randomize = 0;
+static int _debug = 0, _randomize = 0, open_flags = O_DIRECT;
 
 static unsigned int block_sectors = 8192; /* 16 MB */
 
@@ -216,16 +216,16 @@ static int rw_sectors(const char *device, uint64_t offset_sec,
 	uint64_t block_size_sec, sector;
 	void *x;
 	char *sf;
-	int devfd, flags;
+	int devfd, flags = open_flags;
 
 	sf = aligned_malloc(&x, block_sectors * SECTOR_SIZE);
 	if (!sf)
 		return EXIT_FAILURE;
 
 	if (dc == DEV_CHECK)
-		flags = O_RDONLY | O_DIRECT;
+		flags |= O_RDONLY;
 	else
-		flags = O_RDWR | O_DIRECT;
+		flags |= O_RDWR;
 
 	devfd = open(device, flags);
 	if (devfd == -1) {
@@ -326,7 +326,7 @@ static int cmd_dev(const char *device, dev_command dc)
 
 static void __attribute__((__noreturn__)) help(void)
 {
-	printf("Use: [--debug] [--randomize] [--blocksize <sectors>] dump|check|fix|format <device>.\n"
+	printf("Use: [--debug] [--randomize] [--blocksize <sectors>] [--no-direct] dump|check|fix|format <device>.\n"
 		"\nCommands:\n"
 		"  dump   - dump dm-integrity superblock\n"
 		"  check  - use direct-io to check device access\n"
@@ -342,6 +342,7 @@ int main (int argc, char *argv[])
 	long long tmpll;
 	static const struct option longopts[] = {
 		{ "blocksize",  required_argument, 0, 'b' },
+		{ "no-direct",  no_argument,       0, 'n' },
 		{ "randomize",  no_argument,       0, 'r' },
 		{ "debug",      no_argument,       0, 'd' },
 		{ "help",       no_argument,       0, 'h' },
@@ -355,6 +356,9 @@ int main (int argc, char *argv[])
 			block_sectors = (uint64_t)tmpll;
 			if (tmpll <= 0 || tmpll != (long long)block_sectors)
 				help();
+			break;
+		case 'n':
+			open_flags = 0;
 			break;
 		case 'd':
 			_debug = 1;
