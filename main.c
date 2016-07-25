@@ -264,6 +264,9 @@ static int rw_sectors(const char *device, uint64_t offset_sec,
 		print_progress(dev_size_sec * SECTOR_SIZE, offset_sec * SECTOR_SIZE);
 	}
 
+	if (fsync(devfd) < 0)
+		printf("FSYNC failed, errno %d.\n", errno);
+
 	close(devfd);
 	free(sf);
 	return 0;
