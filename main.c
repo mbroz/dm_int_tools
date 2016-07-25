@@ -28,6 +28,7 @@
 #include <stdint.h>
 #include <endian.h>
 #include <errno.h>
+#include <math.h>
 #include <sys/ioctl.h>
 #include <linux/fs.h>
 #include <sys/stat.h>
@@ -155,11 +156,18 @@ static void print_progress(uint64_t device_size, uint64_t bytes)
 	eta = (unsigned long long)(device_size / 1024 / 1024 / mib - tdiff);
 
 	clear_line();
-	printf("Progress: %5.1f%%, ETA %02llu:%02llu, "
-		"%4llu MiB written, speed %5.1f MiB/s%s",
-		(double)bytes / device_size * 100,
-		eta / 60, eta % 60, mbytes, mib,
-		final ? "\n" :"");
+	if (final)
+		printf("Finished, time %02llu:%02llu.%03llu, "
+			"%4llu MiB written, speed %5.1f MiB/s\n",
+			(unsigned long long)tdiff / 60,
+			(unsigned long long)tdiff % 60,
+			(unsigned long long)((tdiff - floor(tdiff)) * 1000.0),
+			mbytes, mib);
+	else
+		printf("Progress: %5.1f%%, ETA %02llu:%02llu, "
+			"%4llu MiB written, speed %5.1f MiB/s",
+			(double)bytes / device_size * 100,
+			eta / 60, eta % 60, mbytes, mib);
 	fflush(stdout);
 }
 
