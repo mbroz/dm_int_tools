@@ -34,6 +34,7 @@
 #include <sys/stat.h>
 #include <sys/syscall.h>
 #include <sys/time.h>
+#include <sys/types.h>
 #include <getopt.h>
 
 #define SECTOR_SIZE 512
@@ -124,12 +125,11 @@ static void clear_line(void)
 	printf("\33[2K\r");
 }
 
-static void print_progress(uint64_t device_size, uint64_t bytes)
+static void print_progress(uint64_t device_size, uint64_t bytes, int final)
 {
 	static struct timeval start_time = {}, now_time = {}, end_time = {};
 	unsigned long long mbytes, eta;
 	double tdiff, mib;
-	int final = (bytes == device_size);
 
 	gettimeofday(&now_time, NULL);
 	if (start_time.tv_sec == 0 && start_time.tv_usec == 0) {
@@ -269,7 +269,7 @@ static int rw_sectors(const char *device, uint64_t offset_sec,
 		}
 
 		offset_sec += block_size_sec;
-		print_progress(dev_size_sec * SECTOR_SIZE, offset_sec * SECTOR_SIZE);
+		print_progress(dev_size_sec * SECTOR_SIZE, offset_sec * SECTOR_SIZE, 0);
 	}
 
 	if (fsync(devfd) < 0)
@@ -277,6 +277,9 @@ static int rw_sectors(const char *device, uint64_t offset_sec,
 
 	close(devfd);
 	free(sf);
+
+	print_progress(dev_size_sec * SECTOR_SIZE, offset_sec * SECTOR_SIZE, 1);
+
 	return 0;
 }
 
