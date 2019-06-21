@@ -190,7 +190,7 @@ static void check_one_by_one(int devfd, char *sf, uint64_t block_size_sec,
 		if (size == SECTOR_SIZE)
 			continue;
 
-		if (errno != EIO) {
+		if (errno != EIO && errno != EILSEQ) {
 			printf("Error sector %" PRIu64 " (Errno %d).\n", sector, errno);
 			return;
 		}
